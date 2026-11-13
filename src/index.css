@@ -1,0 +1,927 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────
+   Yozakura Console — design tokens
+
+   The palette is taken from materials, not from a colour wheel:
+
+     sumi      ink black, slightly warm        canvas and surfaces
+     kinari    unbleached paper                text, primary buttons
+     haizakura greyed cherry petal             the one accent
+     wakatake  young bamboo, greyed            healthy / done
+     yamabuki  lantern amber                   needs attention
+     shu       vermilion seal ink              failed / destructive
+     hai-ao    grey indigo                     informational
+
+   Rules that keep it from looking synthetic:
+   - Neutrals carry no purple or blue tint; they lean the same warm
+     direction as the hero photograph.
+   - Colour is reserved for meaning. Healthy states stay neutral and
+     only exceptions are tinted.
+   - Surfaces are flat. No glows, no gradients behind the UI.
+   - Every text colour clears 4.5:1 on every surface it sits on.
+   ───────────────────────────────────────────────────────────── */
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+/* `inline` makes utilities read the raw variable, so a nested
+   [data-theme] scope (the console dock) re-themes its subtree. */
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-panel-3: var(--panel-3);
+  --color-raise: var(--raise);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-ink: var(--ink);
+  --color-mute: var(--mute);
+  --color-faint: var(--faint);
+  --color-rose: var(--rose);
+  --color-rose-2: var(--rose-2);
+  --color-on-rose: var(--on-rose);
+  --color-gold: var(--gold);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  --color-scrim: var(--scrim);
+}
+
+/* Yozakura — night. Sumi ink surfaces, paper-coloured text. */
+:root,
+[data-theme="yozakura"] {
+  color-scheme: dark;
+  --canvas: #121110;
+  --sidebar: #161514;
+  --panel: #1b1a18;
+  --panel-2: #24221f;
+  --panel-3: #302d29;
+  --surface-solid: #201e1b;
+  --raise: #37342f;
+  --line: rgb(236 228 214 / 0.085);
+  --line-2: rgb(236 228 214 / 0.16);
+  --ink: #ebe6dd;
+  --mute: #b8b0a4;
+  --faint: #ada59a;
+  --rose: #d9a5a9;
+  --rose-2: #e7bcbf;
+  --on-rose: #2a1618;
+  --gold: #c8ab78;
+  --ok: #86b58f;
+  --warn: #dba55a;
+  --danger: #f0927e;
+  --info: #94a9c4;
+  /* Tinted chip fills. Deeper than a 10% wash so the chip's own ink clears
+     4.5:1 even when the chip sits on the raised surface. */
+  --scrim: rgb(8 7 6 / 0.7);
+  --sweep: 0.2;
+  --pop-shadow: 0 2px 5px rgb(0 0 0 / 0.26), 0 22px 60px -18px rgb(0 0 0 / 0.66);
+
+  /* Glass — night. Frosted sumi with a faint paper edge. */
+  --chrome-bg: color-mix(in oklab, var(--canvas) 62%, transparent);
+  --glass-bg: color-mix(in oklab, var(--panel) 52%, transparent);
+  --glass-deep-bg: color-mix(in oklab, var(--panel) 80%, transparent);
+  --glass-blur: 18px;
+  --glass-sat: 1.45;
+  --glass-edge: rgb(255 255 255 / 0.07);
+  --glass-border: rgb(236 228 214 / 0.12);
+}
+
+/* Hanami — day. Washi paper surfaces, sumi-brown text. */
+[data-theme="hanami"] {
+  color-scheme: light;
+  --canvas: #f2eee7;
+  --sidebar: #f8f5ef;
+  --panel: #fcfaf6;
+  --panel-2: #f2ede5;
+  --panel-3: #e6dfd3;
+  --raise: #ffffff;
+  --line: rgb(60 44 28 / 0.11);
+  --line-2: rgb(60 44 28 / 0.2);
+  --ink: #29241f;
+  --mute: #584f47;
+  --faint: #695f55;
+  --rose: #963f4f;
+  --rose-2: #7f3342;
+  --on-rose: #fff6f4;
+  --gold: #6f5626;
+  --ok: #2a5b3d;
+  --warn: #6d4609;
+  --danger: #8c2f1f;
+  --info: #38557a;
+  --scrim: rgb(41 36 31 / 0.38);
+  --sweep: 0.16;
+  --pop-shadow: 0 1px 2px rgb(60 44 28 / 0.08), 0 16px 44px -16px rgb(60 44 28 / 0.26);
+  --surface-solid: #ffffff;
+
+  /* Glass — day. Frosted washi, higher opacity to keep text crisp on light. */
+  --chrome-bg: color-mix(in oklab, var(--canvas) 64%, transparent);
+  --glass-bg: color-mix(in oklab, var(--panel) 62%, transparent);
+  --glass-deep-bg: color-mix(in oklab, var(--panel) 86%, transparent);
+  --glass-blur: 16px;
+  --glass-sat: 1.25;
+  --glass-edge: rgb(255 255 255 / 0.55);
+  --glass-border: rgb(60 44 28 / 0.16);
+}
+
+/* ── Glass surfaces ─────────────────────────────────────────
+   Three strengths, all sharing one frosted recipe:
+     .chrome      top bar, sidebar, console dock — sits over the app
+     .glass       the fleet hero strip — mostly see-through, over the photo
+     .glass-deep  dialogs, palette, toasts, save bar — frosted but opaque enough
+                  for body text
+   A 1px light edge on the top of each surface is what makes it read as
+   glass rather than just "translucent".
+   ────────────────────────────────────────────────────────── */
+.chrome,
+.glass,
+.glass-deep {
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  background-image: linear-gradient(var(--glass-edge), var(--glass-edge));
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+}
+
+.chrome {
+  background-color: var(--chrome-bg);
+}
+
+.glass {
+  background-color: var(--glass-bg);
+  border-color: var(--glass-border);
+}
+
+.glass-deep {
+  background-color: var(--glass-deep-bg);
+  border-color: var(--glass-border);
+}
+
+/* A glass surface whose hairline is drawn by its own border utilities keeps
+   the edge highlight as its lit rim. */
+
+/* Element defaults live in the base layer so utilities can always override
+   them. Unlayered rules would beat `outline-none` and `no-scrollbar`. */
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    background: var(--canvas);
+    color: var(--ink);
+    font-size: 13.5px;
+    line-height: 1.5;
+    /* Plus Jakarta Sans ships a very narrow space (about 0.19em). At 11 to
+       13px words run together, so the gap is opened to a normal width. */
+    word-spacing: 0.1em;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    transition: background-color 260ms ease, color 260ms ease;
+  }
+
+  /* Browsers reset word-spacing on form controls, so it has to be re-inherited. */
+  button,
+  input,
+  select,
+  textarea {
+    word-spacing: inherit;
+  }
+
+  .font-mono,
+  .font-display,
+  code,
+  kbd,
+  pre {
+    word-spacing: normal;
+  }
+
+  [data-theme] {
+    color: var(--ink);
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--rose) 28%, transparent);
+  }
+
+  :focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--rose) 80%, transparent);
+    outline-offset: 2px;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--panel-3) transparent;
+  }
+}
+
+/* ── Utilities ────────────────────────────────────────────── */
+
+@utility num {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+@utility panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 var(--glass-edge), 0 1px 2px rgb(0 0 0 / 0.12);
+  transition: background-color 260ms ease, border-color 260ms ease;
+}
+
+/* Small label above a title or a value. Sentence case on purpose:
+   tracked-out capitals on every label is what makes a dashboard read
+   as a template. */
+@utility eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.005em;
+  color: var(--faint);
+}
+
+@utility shadow-pop {
+  box-shadow: var(--pop-shadow);
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Sticky chrome offset: the tab strip sticks just under the top bar. */
+.app-column {
+  --topbar-h: 60px;
+}
+@media (min-width: 640px) {
+  .app-column {
+    --topbar-h: 68px;
+  }
+}
+
+/* ── Shell ────────────────────────────────────────────────── */
+
+/* Depth for the flat canvas: two whisper-quiet washes anchored off-screen,
+   plus a faint vignette. Strong enough that frosted surfaces have something
+   to pick up, quiet enough to read as lighting, not decoration. */
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(1300px 700px at 88% -18%, color-mix(in oklab, var(--rose) 9%, transparent), transparent 62%),
+    radial-gradient(1100px 760px at -12% 118%, color-mix(in oklab, var(--gold) 6%, transparent), transparent 58%),
+    radial-gradient(150% 120% at 50% 45%, transparent 62%, rgb(0 0 0 / 0.22) 100%);
+}
+
+[data-theme="hanami"] .ambient {
+  background:
+    radial-gradient(1200px 640px at 88% -18%, color-mix(in oklab, var(--rose) 10%, transparent), transparent 62%),
+    radial-gradient(1000px 700px at -12% 118%, color-mix(in oklab, var(--gold) 8%, transparent), transparent 58%);
+}
+
+/* The drawer slides over live content, so it needs a near-opaque sheet;
+   at the normal sidebar opacity the page ghosts through the nav. */
+.app-sidebar[data-drawer] {
+  background-color: color-mix(in oklab, var(--sidebar) 96%, transparent);
+}
+
+/* The console keeps the night palette in both themes. Over day-theme paper a
+   translucent night surface turns muddy grey, so there it is solid ink. */
+html[data-theme="hanami"] .terminal-dock {
+  background-color: #1b1a18;
+}
+
+/* Keyboard focus never lands under the sticky frosted bars. */
+#main {
+  scroll-padding-top: calc(var(--topbar-h) + 16px);
+}
+@media (max-width: 1023px) {
+  #main {
+    scroll-padding-top: calc(var(--topbar-h) + 60px);
+  }
+}
+
+.app-sidebar {
+  background-color: color-mix(in oklab, var(--sidebar) 66%, transparent);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  transition: width 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Current page: a lifted neutral surface with a single petal-coloured
+   marker. The surface itself is never tinted. */
+.nav-current {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel-2);
+}
+
+.nav-current::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 10px;
+  bottom: 10px;
+  width: 2.5px;
+  border-radius: 3px;
+  background: var(--rose);
+}
+
+.agent-row {
+  position: relative;
+  isolation: isolate;
+  transition: background-color 180ms ease;
+}
+
+.agent-row:hover {
+  background: color-mix(in oklab, var(--panel-2) 55%, var(--panel));
+}
+
+.agent-row[aria-pressed="true"] {
+  background: var(--panel-2);
+}
+
+.agent-row[aria-pressed="true"]::before {
+  content: "";
+  position: absolute;
+  inset: 14px auto 14px 0;
+  width: 2.5px;
+  border-radius: 0 3px 3px 0;
+  background: var(--rose);
+}
+
+.hero-summary {
+  background: var(--panel);
+  background-image: linear-gradient(var(--glass-edge), var(--glass-edge));
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+}
+
+/* ── Fleet hero art ───────────────────────────────────────── */
+
+.hero-art {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.hero-art-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.hero-art-layer > img,
+.hero-art-layer > span {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 100%;
+  height: 100%;
+  opacity: 0.4;
+  -webkit-mask-image: linear-gradient(to left, #000 5%, transparent 100%);
+  mask-image: linear-gradient(to left, #000 5%, transparent 100%);
+}
+
+.hero-art-layer > img {
+  object-fit: cover;
+  object-position: 80% 20%;
+}
+
+/* Drawn stand-in for when no art is embedded. */
+.hero-art-layer > span {
+  background: linear-gradient(to left, color-mix(in oklab, var(--rose) 14%, transparent), transparent 70%);
+}
+
+[data-theme="hanami"] .hero-art-layer > img {
+  object-position: 84% 36%;
+  opacity: 0.5;
+}
+
+/* On phones the art stays behind the right edge of the hero so the headline
+   and the summary tiles read over plain canvas instead of over the photo. */
+@media (max-width: 639px) {
+  .hero-art-layer > img,
+  .hero-art-layer > span {
+    width: 74%;
+    opacity: 0.32;
+    -webkit-mask-image: linear-gradient(to left, #000 12%, transparent 100%);
+    mask-image: linear-gradient(to left, #000 12%, transparent 100%);
+  }
+  [data-theme="hanami"] .hero-art-layer > img {
+    opacity: 0.4;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero-art-layer > img,
+  .hero-art-layer > span {
+    width: 64%;
+    opacity: 0.85;
+    -webkit-mask-image: linear-gradient(to left, #000 22%, transparent 100%);
+    mask-image: linear-gradient(to left, #000 22%, transparent 100%);
+  }
+  [data-theme="hanami"] .hero-art-layer > img {
+    opacity: 0.92;
+  }
+}
+
+/* ── Motion ───────────────────────────────────────────────── */
+
+@keyframes view-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Every view root carries `view-in`. The animation runs on the compositor, so
+   the new view is painted immediately even when the tab is throttled and
+   requestAnimationFrame stops firing. */
+.view-in {
+  animation: view-in 0.3s cubic-bezier(0.22, 0.61, 0.21, 1) backwards;
+}
+
+/* The theme glyph swaps instantly and then rotates into place, so the icon
+   always reflects the active theme even when frames are throttled. */
+@keyframes theme-swap {
+  from {
+    transform: rotate(-35deg) scale(0.8);
+  }
+  to {
+    transform: none;
+  }
+}
+.theme-swap {
+  display: inline-flex;
+  animation: theme-swap 0.22s cubic-bezier(0.22, 0.61, 0.21, 1);
+}
+
+.stagger > * {
+  animation: view-in 0.36s cubic-bezier(0.22, 0.61, 0.21, 1) backwards;
+}
+.stagger > *:nth-child(2) { animation-delay: 0.03s; }
+.stagger > *:nth-child(3) { animation-delay: 0.06s; }
+.stagger > *:nth-child(4) { animation-delay: 0.09s; }
+.stagger > *:nth-child(5) { animation-delay: 0.12s; }
+.stagger > *:nth-child(6) { animation-delay: 0.15s; }
+
+/* Status dots are still. A dot that pulses forever stops meaning anything;
+   only a unit that is mid-restart animates (see `animate-pulse`). */
+.live-dot {
+  animation: none;
+}
+
+@keyframes sweep-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.radar-sweep {
+  animation: sweep-rotate 9s linear infinite;
+  transform-origin: center;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.toast-in {
+  animation: toast-in 0.26s cubic-bezier(0.22, 0.61, 0.21, 1) backwards;
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.sheet-in {
+  animation: sheet-in 0.22s cubic-bezier(0.22, 0.61, 0.21, 1) backwards;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.pop-in {
+  animation: pop-in 0.16s ease-out backwards;
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: none;
+  }
+}
+.drawer-in {
+  animation: drawer-in 0.22s cubic-bezier(0.22, 0.61, 0.21, 1) backwards;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.fade-in {
+  animation: fade-in 0.2s ease-out backwards;
+}
+
+/* ── Range input ──────────────────────────────────────────── */
+
+input[type="range"].slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 99px;
+  background:
+    linear-gradient(var(--rose), var(--rose)) 0 / var(--fill, 50%) 100% no-repeat,
+    var(--panel-3);
+  cursor: pointer;
+  outline-offset: 5px;
+}
+input[type="range"].slider:disabled {
+  cursor: not-allowed;
+}
+input[type="range"].slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ink);
+  border: 2px solid var(--panel);
+  box-shadow: 0 0 0 1px var(--line-2);
+  transition: transform 0.15s ease-out;
+}
+input[type="range"].slider:not(:disabled)::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+input[type="range"].slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--ink);
+  border: 2px solid var(--panel);
+  box-shadow: 0 0 0 1px var(--line-2);
+}
+
+@keyframes bar-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+.bar-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgb(255 255 255 / 0.38) 50%, transparent 100%);
+  animation: bar-shimmer 2.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes toast-timer {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.toast-timer {
+  animation: toast-timer 5.2s linear forwards;
+}
+
+.blueprint-grid {
+  background-image:
+    linear-gradient(to right, rgb(236 228 214 / 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(236 228 214 / 0.08) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* ── Console Buttons ──────────────────────────────────────── */
+
+.btn-primary {
+  background-color: var(--rose);
+  border: 1px solid transparent;
+  color: var(--on-rose);
+}
+
+.btn-primary:not(:disabled):hover {
+  background-color: var(--rose-2);
+}
+
+.btn-secondary {
+  background-color: var(--panel-2);
+  border: 1px solid var(--line-2);
+  color: var(--ink);
+}
+
+.btn-secondary:not(:disabled):hover {
+  background-color: var(--panel-3);
+}
+
+/* ── Landing Page: Hybrid Glassmorphism & Tactile Neumorphism ─────────── */
+
+:root,
+[data-theme="yozakura"] {
+  --lp-glass-bg: linear-gradient(155deg, rgb(33 30 27 / 0.78) 0%, rgb(22 20 18 / 0.68) 100%);
+  --lp-glass-header: rgb(19 18 16 / 0.78);
+  --lp-neu-raised:
+    14px 16px 32px rgb(4 3 3 / 0.72),
+    -8px -8px 22px rgb(255 248 238 / 0.028),
+    inset 0 1px 1px rgb(255 249 240 / 0.12),
+    inset 0 -1px 1px rgb(0 0 0 / 0.45);
+  --lp-neu-raised-hover:
+    18px 22px 40px rgb(3 2 2 / 0.82),
+    -10px -10px 26px rgb(255 248 238 / 0.04),
+    inset 0 1px 1.5px rgb(255 249 240 / 0.18),
+    inset 0 -1px 1px rgb(0 0 0 / 0.5);
+  --lp-neu-well-bg: rgb(15 14 13 / 0.82);
+  --lp-neu-well-shadow:
+    inset 5px 5px 11px rgb(3 2 2 / 0.82),
+    inset -4px -4px 9px rgb(255 248 238 / 0.03),
+    0 1px 0 rgb(255 249 240 / 0.06);
+  --lp-neu-btn-bg: linear-gradient(145deg, #272421, #1c1a18);
+  --lp-neu-btn-shadow:
+    6px 6px 14px rgb(4 3 3 / 0.65),
+    -4px -4px 10px rgb(255 248 238 / 0.032),
+    inset 0 1px 0 rgb(255 249 240 / 0.1);
+  --lp-neu-btn-pressed:
+    inset 4px 4px 9px rgb(3 2 2 / 0.85),
+    inset -3px -3px 7px rgb(255 248 238 / 0.03),
+    0 1px 0 rgb(255 249 240 / 0.05);
+  --lp-cta-bg: linear-gradient(180deg, #312e2a 0%, #24211e 100%);
+  --lp-cta-ink: #f2ede4;
+  --lp-cta-border: rgb(236 228 214 / 0.2);
+  --lp-cta-border-hover: rgb(236 228 214 / 0.32);
+  --lp-cta-icon: #c8bfb2;
+  --lp-cta-shadow:
+    0 2px 4px rgb(0 0 0 / 0.42),
+    0 8px 18px -4px rgb(0 0 0 / 0.56),
+    inset 0 1px 0 rgb(255 250 242 / 0.15),
+    inset 0 -1px 0 rgb(0 0 0 / 0.45);
+  --lp-cta-shadow-hover:
+    0 4px 8px rgb(0 0 0 / 0.48),
+    0 12px 24px -6px rgb(0 0 0 / 0.65),
+    inset 0 1px 0 rgb(255 250 242 / 0.22),
+    inset 0 -1px 0 rgb(0 0 0 / 0.5);
+  --lp-cta-shadow-active:
+    inset 0 2px 5px rgb(0 0 0 / 0.65),
+    0 1px 0 rgb(255 250 242 / 0.06);
+  --lp-specular-rim: linear-gradient(
+    135deg,
+    rgb(255 249 240 / 0.2) 0%,
+    rgb(235 226 212 / 0.07) 42%,
+    rgb(255 255 255 / 0.02) 70%,
+    rgb(0 0 0 / 0.38) 100%
+  );
+}
+
+[data-theme="hanami"] {
+  --lp-glass-bg: linear-gradient(155deg, rgb(255 253 249 / 0.86) 0%, rgb(244 238 228 / 0.74) 100%);
+  --lp-glass-header: rgb(248 244 236 / 0.82);
+  --lp-neu-raised:
+    12px 14px 28px rgb(60 44 28 / 0.12),
+    -8px -8px 20px rgb(255 255 255 / 0.88),
+    inset 0 1px 1px rgb(255 255 255 / 0.94),
+    inset 0 -1px 1px rgb(60 44 28 / 0.06);
+  --lp-neu-raised-hover:
+    16px 20px 36px rgb(60 44 28 / 0.16),
+    -10px -10px 24px rgb(255 255 255 / 0.95),
+    inset 0 1px 1.5px rgb(255 255 255 / 0.98),
+    inset 0 -1px 1px rgb(60 44 28 / 0.08);
+  --lp-neu-well-bg: rgb(233 226 214 / 0.82);
+  --lp-neu-well-shadow:
+    inset 5px 5px 10px rgb(60 44 28 / 0.13),
+    inset -4px -4px 9px rgb(255 255 255 / 0.88),
+    0 1px 0 rgb(255 255 255 / 0.78);
+  --lp-neu-btn-bg: linear-gradient(145deg, #fdfbf7, #ebe3d6);
+  --lp-neu-btn-shadow:
+    5px 5px 12px rgb(60 44 28 / 0.13),
+    -4px -4px 10px rgb(255 255 255 / 0.88),
+    inset 0 1px 0 rgb(255 255 255 / 0.95);
+  --lp-neu-btn-pressed:
+    inset 4px 4px 8px rgb(60 44 28 / 0.16),
+    inset -3px -3px 7px rgb(255 255 255 / 0.85),
+    0 1px 0 rgb(255 255 255 / 0.72);
+  --lp-cta-bg: linear-gradient(145deg, #322c26 0%, #211d19 100%);
+  --lp-cta-ink: #f8f4ec;
+  --lp-cta-border: rgb(60 44 28 / 0.45);
+  --lp-cta-border-hover: rgb(60 44 28 / 0.62);
+  --lp-cta-icon: #f8f4ec;
+  --lp-cta-shadow:
+    6px 8px 20px rgb(0 0 0 / 0.4),
+    -4px -4px 12px rgb(255 248 238 / 0.035),
+    inset 0 1px 1px rgb(255 255 255 / 0.48);
+  --lp-cta-shadow-hover:
+    8px 10px 24px rgb(0 0 0 / 0.48),
+    -4px -4px 14px rgb(255 248 238 / 0.05),
+    inset 0 1px 1.5px rgb(255 255 255 / 0.6);
+  --lp-cta-shadow-active:
+    inset 3px 3px 7px rgb(0 0 0 / 0.32),
+    inset -2px -2px 5px rgb(255 255 255 / 0.18);
+  --lp-specular-rim: linear-gradient(
+    135deg,
+    rgb(255 255 255 / 0.92) 0%,
+    rgb(255 255 255 / 0.38) 46%,
+    rgb(60 44 28 / 0.13) 100%
+  );
+}
+
+/* Primary Glass-Neumorphic Card */
+.lp-glass-card {
+  position: relative;
+  background: var(--lp-glass-bg);
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  backdrop-filter: blur(18px) saturate(1.3);
+  border-radius: 22px;
+  box-shadow: var(--lp-neu-raised);
+  border: 1px solid var(--line);
+  transition: box-shadow 220ms ease, border-color 220ms ease;
+}
+
+.lp-glass-card:hover {
+  box-shadow: var(--lp-neu-raised-hover);
+}
+
+.lp-glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--lp-specular-rim);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Recessed Tactile Neumorphic Well (no nested backdrop-filter to prevent GPU flicker) */
+.lp-neu-well {
+  background: var(--lp-neu-well-bg);
+  border-radius: 15px;
+  box-shadow: var(--lp-neu-well-shadow);
+  border: 1px solid rgb(0 0 0 / 0.22);
+}
+
+[data-theme="hanami"] .lp-neu-well {
+  border-color: rgb(60 44 28 / 0.09);
+}
+
+/* Recessed Neumorphic Socket for Icons & Indices */
+.lp-neu-socket {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--lp-neu-well-bg);
+  border-radius: 14px;
+  box-shadow: var(--lp-neu-well-shadow);
+  border: 1px solid var(--line);
+}
+
+/* Extruded Neumorphic Pill for Framer Motion layoutId Indicators (no CSS transition) */
+.lp-neu-pill {
+  background: var(--lp-neu-btn-bg);
+  box-shadow: var(--lp-neu-btn-shadow);
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+}
+
+/* Extruded Tactile Neumorphic Button / Tile */
+.lp-neu-btn {
+  position: relative;
+  background: var(--lp-neu-btn-bg);
+  box-shadow: var(--lp-neu-btn-shadow);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--ink);
+  transition: box-shadow 180ms ease, color 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.lp-neu-btn:hover:not(:disabled) {
+  border-color: var(--line-2);
+}
+
+.lp-neu-btn:active:not(:disabled),
+.lp-neu-btn[data-active="true"],
+.lp-neu-btn[aria-selected="true"] {
+  background: var(--lp-neu-well-bg);
+  box-shadow: var(--lp-neu-btn-pressed);
+  border-color: var(--line-2);
+  color: var(--ink);
+}
+
+/* Natural Matte Sumi-Stone (Dark Mode) / Sumi-Lacquer (Day Mode) Primary CTA */
+.lp-neu-cta {
+  position: relative;
+  background: var(--lp-cta-bg);
+  color: var(--lp-cta-ink);
+  border-radius: 11px;
+  border: 1px solid var(--lp-cta-border);
+  box-shadow: var(--lp-cta-shadow);
+  transition: box-shadow 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.lp-neu-cta svg {
+  color: var(--lp-cta-icon);
+  transition: color 180ms ease;
+}
+
+.lp-neu-cta:hover:not(:disabled) {
+  border-color: var(--lp-cta-border-hover);
+  box-shadow: var(--lp-cta-shadow-hover);
+}
+
+.lp-neu-cta:hover:not(:disabled) svg {
+  color: var(--lp-cta-ink);
+}
+
+.lp-neu-cta:active:not(:disabled) {
+  box-shadow: var(--lp-cta-shadow-active);
+}
+
+/* Floating Glass Header Bar */
+.lp-glass-nav {
+  background: var(--lp-glass-header);
+  -webkit-backdrop-filter: blur(18px) saturate(1.35);
+  backdrop-filter: blur(18px) saturate(1.35);
+  box-shadow:
+    0 10px 30px -10px rgb(0 0 0 / 0.48),
+    inset 0 1px 0 var(--glass-edge);
+}
+
+/* Subtle GPU-composited sonar pulse for live world beacons */
+@keyframes lp-sonar {
+  0% {
+    transform: scale(1);
+    opacity: 0.65;
+  }
+  100% {
+    transform: scale(1.95);
+    opacity: 0;
+  }
+}
+
+.lp-sonar-ring {
+  animation: lp-sonar 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radar-sweep,
+  .bar-shimmer,
+  .toast-timer,
+  .lp-sonar-ring {
+    animation: none !important;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+

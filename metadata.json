@@ -1,0 +1,6 @@
+{
+  "name": "Yozakura / ENI-01 Operations Console",
+  "description": "Fleet health, resource grind jobs, schematic builds, behavior add-ons, and AI provider routing for the Mindcraft cluster.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
